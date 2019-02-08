@@ -68,5 +68,8 @@
     <ClInclude Include="interrupts.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="mbc1.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

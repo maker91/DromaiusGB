@@ -5,6 +5,7 @@
 #include "bus.hpp"
 #include "rom.hpp"
 #include "ram.hpp"
+#include "mbc1.hpp"
 
 #include "cpu.hpp"
 #include "lcd.hpp"
@@ -23,7 +24,8 @@ int main(int argc, const char* argv[])
 
 	auto boot_rom = std::make_shared<dromaiusgb::ROM<0x100>>(address_bus);
 	auto boot_rom_switch = std::make_shared<dromaiusgb::ROMSwitch<0x100>>(address_bus, boot_rom);
-	auto cartridge_rom = std::make_shared<dromaiusgb::ROM<0x8000>>(address_bus);
+	//auto cartridge_rom = std::make_shared<dromaiusgb::ROM<0x8000>>(address_bus);
+	auto cartridge_rom = std::make_shared<dromaiusgb::MBC1<0x4000, 2, 0x2000, 1>>(address_bus);
 	auto vram = std::make_shared<dromaiusgb::RAM<0x2000>>(address_bus);
 	auto wram = std::make_shared<dromaiusgb::RAM<0x2000>>(address_bus);
 	auto timer = std::make_shared<dromaiusgb::Timer>(address_bus);
