@@ -78,7 +78,7 @@ namespace dromaiusgb
 	void LCD::DrawRoutine()
 	{
 		// clear the screen to white
-		memset(screen_buffer, 0xFF, 160 * 144);
+		memset(screen_buffer, 0x00, 160 * 144 * sizeof(uint32_t));
 
 		if (lcd_control.lcd_display_enable == 0)
 			return;
@@ -104,12 +104,12 @@ namespace dromaiusgb
 
 		// draw the background
 		if (lcd_control.bg_display) {
-			for (unsigned int ly = 0; ly < 144; ly++)
-				for (unsigned int lx = 0; lx < 160; lx++)
+			for (unsigned int sy = 0; sy < 144; sy++)
+				for (unsigned int sx = 0; sx < 160; sx++)
 				{
 					// get which background tile coord we are on
-					byte scrolled_x = scroll_x + lx;
-					byte scrolled_y = scroll_y + ly;
+					byte scrolled_x = scroll_x + sx;
+					byte scrolled_y = scroll_y + sy;
 					byte tile_x = scrolled_x / 8;
 					byte tile_y = scrolled_y / 8;
 
@@ -140,47 +140,47 @@ namespace dromaiusgb
 					case 3: shade_index = bg_palette.shade3; break;
 					}
 
-					screen_buffer[lx + ly * 160] = GetShadeColor(shade_index);
+					screen_buffer[sx + sy * 160] = GetShadeColor(shade_index);
 				}
 		}
 
 		// draw window
 
 		// draw sprites
-		if (lcd_control.obj_display_enable) {
-			sprite_attribute_t *sprites = (sprite_attribute_t *)bus.GetBlock(0xFE00);
+		//if (lcd_control.obj_display_enable) {
+		//	sprite_attribute_t *sprites = (sprite_attribute_t *)bus.GetBlock(0xFE00);
 
-			for (int i = 0; i < 40; i++) {
-				sprite_attribute_t sprite = sprites[i];
+		//	for (int i = 0; i < 40; i++) {
+		//		sprite_attribute_t sprite = sprites[i];
 
-				if (sprite.pos_y == 0 || sprite.pos_y >= 160)
-					continue;
+		//		if (sprite.pos_y == 0 || sprite.pos_y >= 160)
+		//			continue;
 
-				if (sprite.pos_x == 0 || sprite.pos_x >= 168)
-					continue;
+		//		if (sprite.pos_x == 0 || sprite.pos_x >= 168)
+		//			continue;
 
-				tile_data_t tile = tile_data[sprite.tile_num];
+		//		tile_data_t tile = tile_data[sprite.tile_num];
 
-				for (byte pixel_x = 0; pixel_x < 8; pixel_x++)
-					for (byte pixel_y = 0; pixel_y < 8; pixel_y++) {
-						// get the pixel palette index in the tile
-						word tile_line = tile.lines[pixel_y];
-						byte palette_index = ((tile_line >> (7 - pixel_x)) & 0x01) | (((tile_line >> (7 + 7 - pixel_x)) & 0x01) << 0x01);
+		//		for (byte pixel_x = 0; pixel_x < 8; pixel_x++)
+		//			for (byte pixel_y = 0; pixel_y < 8; pixel_y++) {
+		//				// get the pixel palette index in the tile
+		//				word tile_line = tile.lines[pixel_y];
+		//				byte palette_index = ((tile_line >> (7 - pixel_x)) & 0x01) | (((tile_line >> (7 + 7 - pixel_x)) & 0x01) << 0x01);
 
-						byte shade_index;
-						switch (palette_index) {
-						case 0: shade_index = bg_palette.shade0; break;
-						case 1: shade_index = bg_palette.shade1; break;
-						case 2: shade_index = bg_palette.shade2; break;
-						case 3: shade_index = bg_palette.shade3; break;
-						}
+		//				byte shade_index;
+		//				switch (palette_index) {
+		//				case 0: continue;
+		//				case 1: shade_index = bg_palette.shade1; break;
+		//				case 2: shade_index = bg_palette.shade2; break;
+		//				case 3: shade_index = bg_palette.shade3; break;
+		//				}
 
-						byte lx = sprite.pos_x + pixel_x;
-						byte ly = sprite.pos_y + pixel_y;
-						screen_buffer[lx + ly * 160] = GetShadeColor(shade_index);
-					}
-			}
-		}
+		//				byte sx = sprite.pos_x + pixel_x;
+		//				byte sy = sprite.pos_y + pixel_y;
+		//				screen_buffer[sx + sy * 160] = GetShadeColor(shade_index);
+		//			}
+		//	}
+		//}
 
 		//std::this_thread::sleep_for(std::chrono::milliseconds(10));
 	}

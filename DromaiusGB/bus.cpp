@@ -11,7 +11,7 @@ namespace dromaiusgb
 			if (space.contains(addr) && space.addressable->Enabled()) {
 				bus_address_t baddr{ addr, address_t(addr - space.start) };
 				space.addressable->Set(baddr, val);
-				break;
+				return;
 			}
 		}
 	}

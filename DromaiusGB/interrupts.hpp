@@ -36,7 +36,7 @@ namespace dromaiusgb
 
 	class InterruptController : public Addressable
 	{
-	private:
+	public:
 		interrupt_flags_t interrupt_enable;
 		interrupt_flags_t interrupt_flags;
 

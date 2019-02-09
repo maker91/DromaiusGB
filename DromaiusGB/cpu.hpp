@@ -69,6 +69,7 @@ namespace dromaiusgb
 		Bus &bus;
 		LCD &lcd;
 		Timer &timer;
+		InterruptController &interrupt_controller;
 
 		std::thread thread;
 		std::atomic<bool> running;
@@ -79,7 +80,7 @@ namespace dromaiusgb
 		dword Step();
 
 	public:
-		CPU(Bus &, LCD &, Timer &);
+		CPU(Bus &, LCD &, Timer &, InterruptController &);
 
 		void Start();
 		void Stop();

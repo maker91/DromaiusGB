@@ -6,7 +6,8 @@
 namespace dromaiusgb
 {
 
-	CPU::CPU(Bus &bus, LCD &lcd, Timer &timer) : bus(bus), lcd(lcd), timer(timer)
+	CPU::CPU(Bus &bus, LCD &lcd, Timer &timer, InterruptController &interrupt_controller) 
+		: bus(bus), lcd(lcd), timer(timer), interrupt_controller(interrupt_controller)
 	{
 		registers[0] = &BC.hi; // B
 		registers[1] = &BC.lo; // C
@@ -851,8 +852,12 @@ namespace dromaiusgb
 		if (!interrupt_master_enable_flag)
 			return;
 
-		interrupt_flags_t interrupt_enable = bus.Get(0xFFFF);
+		/*interrupt_flags_t interrupt_enable = bus.Get(0xFFFF);
 		interrupt_flags_t interrupt_flags = bus.Get(0xFF0F);
+		interrupt_flags_t interrupts_to_execute = interrupt_enable & interrupt_flags;*/
+
+		interrupt_flags_t interrupt_enable = interrupt_controller.interrupt_enable;
+		interrupt_flags_t &interrupt_flags = interrupt_controller.interrupt_flags;
 		interrupt_flags_t interrupts_to_execute = interrupt_enable & interrupt_flags;
 
 		// check V-Blank
@@ -900,7 +905,7 @@ namespace dromaiusgb
 			util::call(0x60, SP, PC, bus);
 		}
 
-		bus.Set(0xFF0F, interrupt_flags);
+		//bus.Set(0xFF0F, interrupt_flags);
 	}
 
 	void CPU::Start()
@@ -910,15 +915,17 @@ namespace dromaiusgb
 		// start a thread to Step the cpu
 		thread = std::thread([&] {
 			while (running) {
-				dword cycles = 0;
+				//dword cycles = 0;
 
-				// check for interrupts (TODO: move this to an IO hook?)
-				//bool h = HandleInterrupts();
-				//if (h) {
-				//	cycles = 20;
-				//} else {
+				/*bool h = HandleInterrupts();
+				if (h) {
+					cycles = 20;
+				} else {
 					cycles = Step();
-				//}
+				}*/
+
+				dword cycles = Step();
+				HandleInterrupts();
 
 				// tick the internal timer
 				timer.Tick(cycles);

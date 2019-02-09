@@ -139,6 +139,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="addressable.hpp" />
+    <ClInclude Include="cartridge.hpp" />
     <ClInclude Include="interrupts.hpp" />
     <ClInclude Include="mbc1.hpp" />
     <ClInclude Include="ram.hpp" />

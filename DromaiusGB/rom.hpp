@@ -34,7 +34,7 @@ namespace dromaiusgb
 			return &rom[addr.offset];
 		}
 
-		void Load(std::string name)
+		void LoadRom(std::string name)
 		{
 			std::ifstream input(name, std::ios::binary);
 
@@ -59,7 +59,7 @@ namespace dromaiusgb
 	public:
 		ROMSwitch(Bus &bus, std::shared_ptr<ROM<Size>> rom) : Addressable(bus), rom(rom) {}
 
-		void Set(bus_address_t, byte) { rom->Disable(); }
+		void Set(bus_address_t, byte) { rom->Disable(); system("pause");  }
 		byte Get(bus_address_t) const { return 0xFF; }
 	};
 }

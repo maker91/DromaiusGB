@@ -4,6 +4,7 @@
 #include <fstream>
 #include "types.hpp"
 #include "addressable.hpp"
+#include "cartridge.hpp"
 
 namespace dromaiusgb
 {
@@ -106,7 +107,7 @@ namespace dromaiusgb
 			return nullptr; // Getting a block of memory from memory banked rom/ram not implemented
 		}
 
-		void Load(std::string name)
+		void LoadRom(std::string name)
 		{
 			std::ifstream input(name, std::ios::binary);
 
@@ -114,6 +115,14 @@ namespace dromaiusgb
 				throw std::runtime_error("failed to load rom: " + name);
 
 			input.read((char *)rom, ROMSize * ROMBanks);
+
+			cartridge_header_t *header = (cartridge_header_t *)&rom[0][0x100];
+			
+			std::cout << "===== Cartridge Header =====" << std::endl;
+			std::cout << "Title: " << header->title << std::endl;
+			std::cout << "Cartidge Type: 0x" << std::hex << (int)header->cartridge_type << std::endl;
+			std::cout << "ROM Size: 0x" << std::hex << (int)header->rom_size << std::endl;
+			std::cout << "RAM Size: 0x" << std::hex << (int)header->ram_size << std::endl;
 		}
 	};
 }
