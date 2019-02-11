@@ -27,10 +27,8 @@ namespace dromaiusgb
 		}
 	}
 
-	void request_interrupt(Bus &bus, InterruptFlags interrupt)
+	void InterruptController::RequestInterrupt(InterruptFlags interrupt)
 	{
-		interrupt_flags_t int_flags = bus.Get(0xFF0F);
-		int_flags = int_flags | (byte)interrupt;
-		bus.Set(0xFF0F, int_flags);
+		interrupt_flags = interrupt_flags | (byte)interrupt;
 	}
 }

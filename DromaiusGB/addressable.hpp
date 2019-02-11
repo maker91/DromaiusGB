@@ -15,6 +15,7 @@ namespace dromaiusgb
 
 	public:
 		Addressable(Bus &bus) : bus(bus) {}
+		virtual ~Addressable() {}
 
 		virtual bool Enabled() const { return true; }
 

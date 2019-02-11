@@ -33,8 +33,7 @@ namespace dromaiusgb
 	union register_t
 	{
 		word value;
-		struct
-		{
+		struct {
 			union
 			{
 				byte lo;
@@ -75,7 +74,7 @@ namespace dromaiusgb
 		std::atomic<bool> running;
 
 	private:
-		void HandleInterrupts();
+		dword HandleInterrupts();
 		dword HandleCBPrefixOpcode();
 		dword Step();
 

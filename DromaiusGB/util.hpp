@@ -29,6 +29,7 @@ namespace dromaiusgb
 		void push(word w, word &sp, Bus &mem);
 		word pop(word &sp, Bus &mem);
 		void call(word addr, word &sp, word &pc, Bus &mem);
+		void ret(word &pc, word &sp, Bus &mem);
 
 		byte bcd_correction(byte a, flags_t &flags);
 

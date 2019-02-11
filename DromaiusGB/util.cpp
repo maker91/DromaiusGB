@@ -1,5 +1,6 @@
 #include "util.hpp"
 
+
 namespace dromaiusgb
 {
 	namespace util
@@ -63,7 +64,6 @@ namespace dromaiusgb
 
 			r = r & 0xFF;
 			flags.zf = (r == 0);
-
 			return (byte)r;
 		}
 
@@ -160,14 +160,14 @@ namespace dromaiusgb
 		void push(word w, word &sp, Bus &mem)
 		{
 			sp -= 2;
-			mem.Set(sp, (w >> 8) & 0xFF);
-			mem.Set(sp + 1, w & 0xFF);
+			mem.Set(sp, w & 0xFF);
+			mem.Set(sp + 1, (w >> 8) & 0xFF);
 		}
 
 		word pop(word &sp, Bus &mem)
 		{
-			byte m = mem.Get(sp);
-			byte l = mem.Get(sp + 1);
+			byte l = mem.Get(sp);
+			byte m = mem.Get(sp + 1);
 			sp += 2;
 
 			word r = l | (m << 8);
@@ -178,6 +178,11 @@ namespace dromaiusgb
 		{
 			push(pc, sp, mem);
 			pc = addr;
+		}
+
+		void ret(word &pc, word &sp, Bus &mem)
+		{
+			pc = util::pop(sp, mem);
 		}
 
 		byte bcd_correction(byte a, flags_t &flags)

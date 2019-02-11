@@ -2,6 +2,7 @@
 
 #include "types.hpp"
 #include "addressable.hpp"
+#include "interrupts.hpp"
 
 
 namespace dromaiusgb
@@ -27,11 +28,12 @@ namespace dromaiusgb
 	private:
 		const dword cycles_per_div_tick = 256;
 		const dword cycles_per_tima_tick_0 = 1024;
-		const dword cycles_per_tima_tick_1 = 16;
+		const dword cycles_per_tima_tick_1 = 16; 
 		const dword cycles_per_tima_tick_2 = 64;
 		const dword cycles_per_tima_tick_3 = 256;
 
 	private:
+		InterruptController &interrupt_controller;
 		dword div_cycle;
 		dword tima_cycle;
 
@@ -42,7 +44,7 @@ namespace dromaiusgb
 		timer_control_t tac;
 
 	public:
-		Timer(Bus &);
+		Timer(Bus &, InterruptController &);
 
 		void Set(bus_address_t, byte);
 		byte Get(bus_address_t) const;

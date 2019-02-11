@@ -5,6 +5,7 @@
 
 #include "types.hpp"
 #include "addressable.hpp"
+#include "interrupts.hpp"
 
 
 namespace dromaiusgb
@@ -122,6 +123,7 @@ namespace dromaiusgb
 		byte window_x;
 
 	private:
+		InterruptController &interrupt_controller;
 		dword cycle;
 		LCDMode mode;
 
@@ -131,13 +133,15 @@ namespace dromaiusgb
 		std::thread draw_thread;
 
 	private:
+		void ClearScreen(std::uint32_t);
+		void DrawWindow(byte, byte, byte *, tile_data_t *);
 		void DrawRoutine();
 		void SwapBuffers();
 
 		std::uint32_t GetShadeColor(byte);
 
 	public:
-		LCD(Bus &);
+		LCD(Bus &, InterruptController &);
 		~LCD();
 
 		void Set(bus_address_t, byte);

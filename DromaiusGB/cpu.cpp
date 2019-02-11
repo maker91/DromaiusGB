@@ -201,7 +201,7 @@ namespace dromaiusgb
 			case 0xF0: case 0xF1: case 0xF2: case 0xF3: case 0xF4: case 0xF5: case 0xF7: // set 6, reg
 			case 0xF8: case 0xF9: case 0xFA: case 0xFB: case 0xFC: case 0xFD: case 0xFF: // set 7, reg
 			{
-				byte v = *registers[opcode & 0x07];
+				byte &v = *registers[opcode & 0x07];
 				byte bit = opcode >> 3 & 0x07;
 				v = util::set_bit(v, bit);
 				return 8;
@@ -221,8 +221,6 @@ namespace dromaiusgb
 				return 0;
 			}
 		}
-
-		return true;
 	}
 
 	dword CPU::Step()
@@ -681,7 +679,7 @@ namespace dromaiusgb
 			{
 				byte zero_check = opcode >> 3 & 0x01;
 				if (AF.flags.zf == zero_check) {
-					PC = util::pop(SP, bus);
+					util::ret(PC, SP, bus);
 					return 12;
 				}
 				return 8;
@@ -691,7 +689,7 @@ namespace dromaiusgb
 			{
 				byte carry_check = opcode >> 3 & 0x01;
 				if (AF.flags.cy == carry_check) {
-					PC = util::pop(SP, bus);
+					util::ret(PC, SP, bus);
 					return 12;
 				}
 				return 8;
@@ -758,13 +756,13 @@ namespace dromaiusgb
 
 			case 0xC9: // ret
 			{
-				PC = util::pop(SP, bus);
+				util::ret(PC, SP, bus);
 				return 16;
 			}
 
 			case 0xD9: // reti
 			{
-				PC = util::pop(SP, bus);
+				util::ret(PC, SP, bus);
 				interrupt_master_enable_flag = true;
 				return 16;
 			}
@@ -847,18 +845,17 @@ namespace dromaiusgb
 		return true;
 	}
 
-	void CPU::HandleInterrupts()
+	dword CPU::HandleInterrupts()
 	{
 		if (!interrupt_master_enable_flag)
-			return;
-
-		/*interrupt_flags_t interrupt_enable = bus.Get(0xFFFF);
-		interrupt_flags_t interrupt_flags = bus.Get(0xFF0F);
-		interrupt_flags_t interrupts_to_execute = interrupt_enable & interrupt_flags;*/
+			return 0;
 
 		interrupt_flags_t interrupt_enable = interrupt_controller.interrupt_enable;
 		interrupt_flags_t &interrupt_flags = interrupt_controller.interrupt_flags;
 		interrupt_flags_t interrupts_to_execute = interrupt_enable & interrupt_flags;
+
+		if (!interrupts_to_execute)
+			return 0;
 
 		// check V-Blank
 		if (interrupts_to_execute.vblank)
@@ -867,6 +864,7 @@ namespace dromaiusgb
 			interrupt_master_enable_flag = false;
 
 			util::call(0x40, SP, PC, bus);
+			return 5;
 		}
 
 		// check LCD STAT
@@ -876,6 +874,7 @@ namespace dromaiusgb
 			interrupt_master_enable_flag = false;
 
 			util::call(0x48, SP, PC, bus);
+			return 5;
 		}
 
 		// check Timer
@@ -885,6 +884,7 @@ namespace dromaiusgb
 			interrupt_master_enable_flag = false;
 
 			util::call(0x50, SP, PC, bus);
+			return 5;
 		}
 
 		// check Serial
@@ -894,6 +894,7 @@ namespace dromaiusgb
 			interrupt_master_enable_flag = false;
 
 			util::call(0x58, SP, PC, bus);
+			return 5;
 		}
 
 		// check Joypad
@@ -903,9 +904,10 @@ namespace dromaiusgb
 			interrupt_master_enable_flag = false;
 
 			util::call(0x60, SP, PC, bus);
+			return 5;
 		}
 
-		//bus.Set(0xFF0F, interrupt_flags);
+		return 0;
 	}
 
 	void CPU::Start()
@@ -915,17 +917,8 @@ namespace dromaiusgb
 		// start a thread to Step the cpu
 		thread = std::thread([&] {
 			while (running) {
-				//dword cycles = 0;
-
-				/*bool h = HandleInterrupts();
-				if (h) {
-					cycles = 20;
-				} else {
-					cycles = Step();
-				}*/
-
-				dword cycles = Step();
-				HandleInterrupts();
+				dword cycles = HandleInterrupts();
+				cycles += Step();
 
 				// tick the internal timer
 				timer.Tick(cycles);

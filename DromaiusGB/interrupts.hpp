@@ -45,7 +45,7 @@ namespace dromaiusgb
 
 		void Set(bus_address_t, byte);
 		byte Get(bus_address_t) const;
-	};
 
-	void request_interrupt(Bus &, InterruptFlags);
+		void RequestInterrupt(InterruptFlags);
+	};
 }

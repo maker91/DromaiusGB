@@ -10,6 +10,7 @@
 #include "cpu.hpp"
 #include "lcd.hpp"
 #include "timer.hpp"
+#include "link.hpp"
 #include "interrupts.hpp"
 
 
@@ -29,9 +30,10 @@ int main(int argc, const char* argv[])
 	auto vram = std::make_shared<dromaiusgb::RAM<0x2000>>(address_bus);
 	auto wram = std::make_shared<dromaiusgb::RAM<0x2000>>(address_bus);
 	auto oam = std::make_shared<dromaiusgb::RAM<0x009F>>(address_bus);
-	auto timer = std::make_shared<dromaiusgb::Timer>(address_bus);
 	auto interrupt_controller = std::make_shared<dromaiusgb::InterruptController>(address_bus);
-	auto lcd = std::make_shared<dromaiusgb::LCD>(address_bus);
+	auto timer = std::make_shared<dromaiusgb::Timer>(address_bus, *interrupt_controller);
+	auto lcd = std::make_shared<dromaiusgb::LCD>(address_bus, *interrupt_controller);
+	auto linkport = std::make_shared<dromaiusgb::LinkPort>(address_bus, *interrupt_controller);
 	auto hram = std::make_shared<dromaiusgb::RAM<0x007E>>(address_bus);
 
 	address_bus.RegisterAddressSpace(0x0000, 0x0100, boot_rom);
@@ -42,6 +44,7 @@ int main(int argc, const char* argv[])
 	address_bus.RegisterAddressSpace(0xC000, 0xDFFF, wram);
 	address_bus.RegisterAddressSpace(0xE000, 0xFDFF, wram);
 	address_bus.RegisterAddressSpace(0xFE00, 0xFE9F, oam);
+	address_bus.RegisterAddressSpace(0xFF01, 0xFF02, linkport);
 	address_bus.RegisterAddressSpace(0xFF04, 0xFF07, timer);
 	address_bus.RegisterAddressSpace(0xFF0F, 0xFF0F, interrupt_controller);
 	address_bus.RegisterAddressSpace(0xFF40, 0xFF4B, lcd);

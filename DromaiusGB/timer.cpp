@@ -6,7 +6,8 @@
 
 namespace dromaiusgb
 {
-	Timer::Timer(Bus &bus) : Addressable(bus), div_cycle(0), tima_cycle(0)
+	Timer::Timer(Bus &bus, InterruptController &ic) : Addressable(bus), interrupt_controller(ic), div_cycle(0), tima_cycle(0),
+		div(0), tima(0), tma(0)
 	{
 
 	}
@@ -61,7 +62,7 @@ namespace dromaiusgb
 				if (tima == 0) {
 					// tima overflow, reset and request interrupt
 					tima = tma;
-					request_interrupt(bus, InterruptFlags::Timer);
+					interrupt_controller.RequestInterrupt(InterruptFlags::Timer);
 				}
 			}
 		}
