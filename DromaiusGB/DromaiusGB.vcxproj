@@ -132,6 +132,7 @@
     <ClCompile Include="bus.cpp" />
     <ClCompile Include="cpu.cpp" />
     <ClCompile Include="interrupts.cpp" />
+    <ClCompile Include="joypad.cpp" />
     <ClCompile Include="lcd.cpp" />
     <ClCompile Include="link.cpp" />
     <ClCompile Include="main.cpp" />
@@ -142,6 +143,7 @@
     <ClInclude Include="addressable.hpp" />
     <ClInclude Include="cartridge.hpp" />
     <ClInclude Include="interrupts.hpp" />
+    <ClInclude Include="joypad.hpp" />
     <ClInclude Include="link.hpp" />
     <ClInclude Include="mbc1.hpp" />
     <ClInclude Include="ram.hpp" />

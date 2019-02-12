@@ -2,6 +2,7 @@
 
 #include "types.hpp"
 #include "addressable.hpp"
+#include "bus.hpp"
 
 namespace dromaiusgb
 {

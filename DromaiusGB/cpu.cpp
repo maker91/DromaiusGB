@@ -433,7 +433,7 @@ namespace dromaiusgb
 			case 0x80: case 0x81: case 0x82: case 0x83: case 0x84: case 0x85: case 0x87: // add a,reg
 			case 0x88: case 0x89: case 0x8a: case 0x8b: case 0x8c: case 0x8d: case 0x8f: // adc a,reg
 			{
-				byte carry = (opcode & 0x08) && AF.flags.cy;
+				byte carry = (opcode >> 3 & 0x01) & AF.flags.cy;
 				AF.hi = util::add_with_carry(AF.hi, *registers[opcode & 0x07], carry, AF.flags);
 				return 4;
 			}
@@ -441,7 +441,7 @@ namespace dromaiusgb
 			case 0x86: // add a,(HL)
 			case 0x8E: // adc a,(HL)
 			{
-				byte carry = (opcode & 0x08) && AF.flags.cy;
+				byte carry = (opcode >> 3 & 0x01) & AF.flags.cy;
 				AF.hi = util::add_with_carry(AF.hi, bus.Get(HL), carry, AF.flags);
 				return 8;
 			}
@@ -449,7 +449,7 @@ namespace dromaiusgb
 			case 0xC6: // add a,n
 			case 0xCE: // adc a,n
 			{
-				byte carry = (opcode & 0x08) && AF.flags.cy;
+				byte carry = (opcode >> 3 & 0x01) & AF.flags.cy;
 				AF.hi = util::add_with_carry(AF.hi, util::get_immediate_byte(PC, bus), carry, AF.flags);
 				return 8;
 			}
@@ -457,7 +457,7 @@ namespace dromaiusgb
 			case 0x90: case 0x91: case 0x92: case 0x93: case 0x94: case 0x95: case 0x97: // sub a,reg
 			case 0x98: case 0x99: case 0x9a: case 0x9b: case 0x9c: case 0x9d: case 0x9f: // sbc a,reg
 			{
-				byte carry = (opcode & 8) && AF.flags.cy;
+				byte carry = (opcode >> 3 & 0x01) & AF.flags.cy;
 				AF.hi = util::sub_with_carry(AF.hi, *registers[opcode & 0x07], carry, AF.flags);
 				return 4;
 			}
@@ -465,7 +465,7 @@ namespace dromaiusgb
 			case 0x96: // sub a,(HL)
 			case 0x9E: // sbc a,(HL)
 			{
-				byte carry = (opcode & 0x08) && AF.flags.cy;
+				byte carry = (opcode >> 3 & 0x01) & AF.flags.cy;
 				AF.hi = util::sub_with_carry(AF.hi, bus.Get(HL), carry, AF.flags);
 				return 8;
 			}
@@ -473,7 +473,7 @@ namespace dromaiusgb
 			case 0xD6: // sub a,n
 			case 0xDE: // sbc a,n
 			{
-				byte carry = (opcode & 0x08) && AF.flags.cy;
+				byte carry = (opcode >> 3 & 0x01) & AF.flags.cy;
 				AF.hi = util::sub_with_carry(AF.hi, util::get_immediate_byte(PC, bus), carry, AF.flags);
 				return 8;
 			}
@@ -787,24 +787,28 @@ namespace dromaiusgb
 			case 0x07: // rlca
 			{
 				AF.hi = util::rotate_left_through_carry(AF.hi, AF.flags);
+				AF.flags.zf = 0;
 				return 4;
 			}
 
 			case 0x0F: // rrca
 			{
 				AF.hi = util::rotate_right_through_carry(AF.hi, AF.flags);
+				AF.flags.zf = 0;
 				return 4;
 			}
 
 			case 0x17: // rla
 			{
 				AF.hi = util::rotate_left(AF.hi, AF.flags);
+				AF.flags.zf = 0;
 				return 4;
 			}
 
 			case 0x1F: // rra
 			{
 				AF.hi = util::rotate_right(AF.hi, AF.flags);
+				AF.flags.zf = 0;
 				return 4;
 			}
 

@@ -1,7 +1,6 @@
 #pragma once
 
 #include <SFML/Graphics.hpp>
-#include <thread>
 
 #include "types.hpp"
 #include "addressable.hpp"
@@ -129,13 +128,10 @@ namespace dromaiusgb
 
 		sf::Uint32 *screen_buffer;
 		sf::Texture screen_texture;
-
-		std::thread draw_thread;
-
 	private:
-		void ClearScreen(std::uint32_t);
-		void DrawWindow(byte, byte, byte *, tile_data_t *);
-		void DrawRoutine();
+		void ClearScanLine(byte, std::uint32_t);
+		void DrawTileMapScanLine(byte, byte, byte *, tile_data_t *);
+		void DrawScanLine(byte);
 		void SwapBuffers();
 
 		std::uint32_t GetShadeColor(byte);
@@ -149,5 +145,6 @@ namespace dromaiusgb
 
 		void Tick(dword delta_cycle);
 		const sf::Texture &GetScreenTexture() const;
+		void LaunchDMA(byte);
 	};
 }

@@ -59,7 +59,7 @@ namespace dromaiusgb
 	public:
 		ROMSwitch(Bus &bus, std::shared_ptr<ROM<Size>> rom) : Addressable(bus), rom(rom) {}
 
-		void Set(bus_address_t, byte) { rom->Disable(); system("pause");  }
+		void Set(bus_address_t, byte) { rom->Disable(); }
 		byte Get(bus_address_t) const { return 0xFF; }
 	};
 }

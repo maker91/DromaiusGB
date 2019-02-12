@@ -11,6 +11,7 @@
 #include "lcd.hpp"
 #include "timer.hpp"
 #include "link.hpp"
+#include "joypad.hpp"
 #include "interrupts.hpp"
 
 
@@ -34,6 +35,7 @@ int main(int argc, const char* argv[])
 	auto timer = std::make_shared<dromaiusgb::Timer>(address_bus, *interrupt_controller);
 	auto lcd = std::make_shared<dromaiusgb::LCD>(address_bus, *interrupt_controller);
 	auto linkport = std::make_shared<dromaiusgb::LinkPort>(address_bus, *interrupt_controller);
+	auto joypad = std::make_shared<dromaiusgb::Joypad>(address_bus, *interrupt_controller);
 	auto hram = std::make_shared<dromaiusgb::RAM<0x007E>>(address_bus);
 
 	address_bus.RegisterAddressSpace(0x0000, 0x0100, boot_rom);
@@ -44,6 +46,7 @@ int main(int argc, const char* argv[])
 	address_bus.RegisterAddressSpace(0xC000, 0xDFFF, wram);
 	address_bus.RegisterAddressSpace(0xE000, 0xFDFF, wram);
 	address_bus.RegisterAddressSpace(0xFE00, 0xFE9F, oam);
+	address_bus.RegisterAddressSpace(0xFF00, 0xFF00, joypad);
 	address_bus.RegisterAddressSpace(0xFF01, 0xFF02, linkport);
 	address_bus.RegisterAddressSpace(0xFF04, 0xFF07, timer);
 	address_bus.RegisterAddressSpace(0xFF0F, 0xFF0F, interrupt_controller);
@@ -73,6 +76,37 @@ int main(int argc, const char* argv[])
 		sf::Event ev;
 		while (window.pollEvent(ev)) {
 			switch (ev.type) {
+
+				case sf::Event::KeyPressed:
+				{
+					switch (ev.key.code) {
+						case sf::Keyboard::Up: joypad->SetButtonState(dromaiusgb::JoypadButton::Up, true); break;
+						case sf::Keyboard::Down: joypad->SetButtonState(dromaiusgb::JoypadButton::Down, true); break;
+						case sf::Keyboard::Left: joypad->SetButtonState(dromaiusgb::JoypadButton::Left, true); break;
+						case sf::Keyboard::Right: joypad->SetButtonState(dromaiusgb::JoypadButton::Right, true); break;
+						case sf::Keyboard::Z: joypad->SetButtonState(dromaiusgb::JoypadButton::A, true); break;
+						case sf::Keyboard::X: joypad->SetButtonState(dromaiusgb::JoypadButton::B, true); break;
+						case sf::Keyboard::Escape: joypad->SetButtonState(dromaiusgb::JoypadButton::Start, true); break;
+						case sf::Keyboard::Tab: joypad->SetButtonState(dromaiusgb::JoypadButton::Select, true); break;
+					}
+					break;
+				}
+
+				case sf::Event::KeyReleased:
+				{
+					switch (ev.key.code) {
+						case sf::Keyboard::Up: joypad->SetButtonState(dromaiusgb::JoypadButton::Up, false); break;
+						case sf::Keyboard::Down: joypad->SetButtonState(dromaiusgb::JoypadButton::Down, false); break;
+						case sf::Keyboard::Left: joypad->SetButtonState(dromaiusgb::JoypadButton::Left, false); break;
+						case sf::Keyboard::Right: joypad->SetButtonState(dromaiusgb::JoypadButton::Right, false); break;
+						case sf::Keyboard::Z: joypad->SetButtonState(dromaiusgb::JoypadButton::A, false); break;
+						case sf::Keyboard::X: joypad->SetButtonState(dromaiusgb::JoypadButton::B, false); break;
+						case sf::Keyboard::Escape: joypad->SetButtonState(dromaiusgb::JoypadButton::Start, false); break;
+						case sf::Keyboard::Tab: joypad->SetButtonState(dromaiusgb::JoypadButton::Select, false); break;
+					}
+					break;
+				}
+
 				case sf::Event::Closed:
 				{
 					window.close();

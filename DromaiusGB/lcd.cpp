@@ -22,8 +22,7 @@ namespace dromaiusgb
 
 	LCD::~LCD()
 	{
-		if (draw_thread.joinable())
-			draw_thread.join();
+
 	}
 
 	void LCD::Set(bus_address_t addr, byte val)
@@ -36,7 +35,7 @@ namespace dromaiusgb
 		case 0xFF43: scroll_x = val; break;
 		case 0xFF44: ly = val; break;
 		case 0xFF45: lyc = val; break;
-		case 0xFF46: dma = val; break;
+		case 0xFF46: LaunchDMA(val); break;
 		case 0xFF47: bg_palette = val; break;
 		case 0xFF48: obj_palette_0 = val; break;
 		case 0xFF49: obj_palette_1 = val; break;
@@ -75,61 +74,58 @@ namespace dromaiusgb
 		}
 	}
 
-	void LCD::ClearScreen(std::uint32_t color)
+	void LCD::ClearScanLine(byte sy, std::uint32_t color)
 	{
-		for (unsigned int sy = 0; sy < 144; sy++)
-			for (unsigned int sx = 0; sx < 160; sx++)
-			{
-				screen_buffer[sx + sy * 160] = color;
-			}
+		for (unsigned int sx = 0; sx < 160; sx++)
+		{
+			screen_buffer[sx + sy * 160] = color;
+		}
 	}
 
-	void LCD::DrawWindow(byte start_x, byte start_y, byte *bg_map, tile_data_t *tile_data)
+	void LCD::DrawTileMapScanLine(byte sy, byte start_x, byte *bg_map, tile_data_t *tile_data)
 	{
-		for (unsigned int sy = start_x; sy < 144; sy++)
-			for (unsigned int sx = start_y; sx < 160; sx++)
-			{
-				// get which background tile coord we are on
-				byte scrolled_x = scroll_x + sx;
-				byte scrolled_y = scroll_y + sy;
-				byte tile_x = scrolled_x / 8;
-				byte tile_y = scrolled_y / 8;
+		byte scrolled_y = scroll_y + sy;
+		byte tile_y = scrolled_y / 8;
+		byte pixel_y = scrolled_y % 8;
 
-				// get which tile pixel we are on
-				byte pixel_x = scrolled_x % 8;
-				byte pixel_y = scrolled_y % 8;
+		for (unsigned int sx = start_x; sx < 160; sx++)
+		{
+			// get which background tile coord and pixel we are on
+			byte scrolled_x = scroll_x + sx;
+			byte tile_x = scrolled_x / 8;
+			byte pixel_x = scrolled_x % 8;
 
-				// get the background tile to draw from the background map
-				byte tile_number = bg_map[32 * tile_y + tile_x];
+			// get the background tile to draw from the background map
+			byte tile_number = bg_map[32 * tile_y + tile_x];
 
-				// get the tile from the tile data;
-				tile_data_t tile;
-				if (lcd_control.bg_and_window_tile_data_select == 0)
-					tile = *(tile_data + (sbyte)tile_number);
-				else
-					tile = *(tile_data + tile_number);
+			// get the tile from the tile data;
+			tile_data_t tile;
+			if (lcd_control.bg_and_window_tile_data_select == 0)
+				tile = *(tile_data + (sbyte)tile_number);
+			else
+				tile = *(tile_data + tile_number);
 
-				// get the pixel palette index in the tile
-				word tile_line = tile.lines[pixel_y];
-				byte palette_index = ((tile_line >> (7 - pixel_x)) & 0x01) | (((tile_line >> (15 - pixel_x)) & 0x01) << 0x01);
+			// get the pixel palette index in the tile
+			word tile_line = tile.lines[pixel_y];
+			byte palette_index = ((tile_line >> (7 - pixel_x)) & 0x01) | (((tile_line >> (15 - pixel_x)) & 0x01) << 0x01);
 
-				// convert the palette index to a color
-				byte shade_index;
-				switch (palette_index) {
-				case 0: shade_index = bg_palette.shade0; break;
-				case 1: shade_index = bg_palette.shade1; break;
-				case 2: shade_index = bg_palette.shade2; break;
-				case 3: shade_index = bg_palette.shade3; break;
-				}
-
-				screen_buffer[sx + sy * 160] = GetShadeColor(shade_index);
+			// convert the palette index to a color
+			byte shade_index;
+			switch (palette_index) {
+			case 0: shade_index = bg_palette.shade0; break;
+			case 1: shade_index = bg_palette.shade1; break;
+			case 2: shade_index = bg_palette.shade2; break;
+			case 3: shade_index = bg_palette.shade3; break;
 			}
+
+			screen_buffer[sx + sy * 160] = GetShadeColor(shade_index);
+		}
 	}
 
-	void LCD::DrawRoutine()
+	void LCD::DrawScanLine(byte sy)
 	{
 		// clear the screen to white
-		ClearScreen(0xFF06978A);
+		ClearScanLine(sy, 0xFF06978A);
 
 		if (lcd_control.lcd_display_enable == 0)
 			return;
@@ -164,16 +160,17 @@ namespace dromaiusgb
 
 		// draw the background
 		if (lcd_control.bg_display) {
-			DrawWindow(0, 0, bg_map, tile_data);
+			DrawTileMapScanLine(sy, 0, bg_map, tile_data);
 		}
 
 		// draw window
-		if (lcd_control.window_display_enable && window_x <= 167 && window_y < 144) {
-			DrawWindow(std::min(0, window_x - 7), window_y, window_map, tile_data);
+		if (lcd_control.window_display_enable && sy >= window_y && window_x <= 167 && window_y < 144) {
+			DrawTileMapScanLine(sy, std::min(0, window_x - 7), window_map, tile_data);
 		}
 
-		// draw sprites (TODO: some sprites should be under window)
+		// draw sprites (TODO: some sprites should be under window/bg
 		if (lcd_control.obj_display_enable) {
+			byte sprite_height = 8 << (lcd_control.obj_size);
 			sprite_attribute_t *sprites = (sprite_attribute_t *)bus.GetBlock(0xFE00);
 
 			for (int i = 0; i < 40; i++) {
@@ -185,30 +182,50 @@ namespace dromaiusgb
 				if (sprite.pos_x == 0 || sprite.pos_x >= 168)
 					continue;
 
+				int sprite_pos_x = sprite.pos_x - 8;
+				int sprite_pos_y = sprite.pos_y - 16;
+
+				if (sy < sprite_pos_y || sy >= sprite_height + sprite_pos_y)
+					// sprite is not on this scan line
+					continue;
+
 				tile_data_t tile = tile_data[sprite.tile_num];
 
-				for (byte pixel_x = 0; pixel_x < 8; pixel_x++)
-					for (byte pixel_y = 0; pixel_y < 8; pixel_y++) {
-						// get the pixel palette index in the tile
-						word tile_line = tile.lines[pixel_y];
-						byte palette_index = ((tile_line >> (7 - pixel_x)) & 0x01) | (((tile_line >> (7 + 7 - pixel_x)) & 0x01) << 0x01);
+				// the y pixel to sample in the sprite tile
+				int sample_y = sy - sprite_pos_y;
+				if (sprite.flip_y)
+					sample_y = sprite_height - sample_y - 1;
 
-						byte shade_index;
-						switch (palette_index) {
-						case 0: continue;
-						case 1: shade_index = bg_palette.shade1; break;
-						case 2: shade_index = bg_palette.shade2; break;
-						case 3: shade_index = bg_palette.shade3; break;
-						}
+				for (int sx = std::max(0, sprite_pos_x); sx < sprite_pos_x + 8; sx++) {
 
-						byte sx = sprite.pos_x + pixel_x;
-						byte sy = sprite.pos_y + pixel_y;
-						screen_buffer[sx + sy * 160] = GetShadeColor(shade_index);
+					// the x pixel to sample in the sprite tile
+					int sample_x = sx - sprite_pos_x;
+					if (sprite.flip_x)
+						sample_x = 8 - sample_x - 1;
+
+					// get the pixel palette index in the tile
+					word tile_line = tile.lines[sample_y];
+					byte palette_index = ((tile_line >> (7 - sample_x)) & 0x01) | (((tile_line >> (15 - sample_x)) & 0x01) << 0x01);
+
+					// get the palette for the sprite
+					color_palette_t obj_palete;
+					switch (sprite.palette_num) {
+					case 0: obj_palete = obj_palette_0; break;
+					case 1: obj_palete = obj_palette_1; break;
 					}
+
+					byte shade_index;
+					switch (palette_index) {
+					case 0: continue;
+					case 1: shade_index = obj_palete.shade1; break;
+					case 2: shade_index = obj_palete.shade2; break;
+					case 3: shade_index = obj_palete.shade3; break;
+					}
+
+					screen_buffer[sx + sy * 160] = GetShadeColor(shade_index);
+				}
 			}
 		}
-
-		//std::this_thread::sleep_for(std::chrono::milliseconds(10));
 	}
 
 	void LCD::SwapBuffers()
@@ -219,6 +236,15 @@ namespace dromaiusgb
 	const sf::Texture &LCD::GetScreenTexture() const
 	{
 		return screen_texture;
+	}
+
+	void LCD::LaunchDMA(byte request)
+	{
+		word source_addr = request << 8;
+		const byte *src = bus.GetBlock(source_addr);
+		byte *dst = bus.GetBlock(0xFE00);
+
+		memcpy(dst, src, 0x9F);
 	}
 
 	void LCD::Tick(dword delta_cycle)
@@ -245,6 +271,9 @@ namespace dromaiusgb
 
 			if (ly < vblank_start) // start hblank
 			{
+				// draw the previous scanline
+				DrawScanLine(ly - 1);
+
 				mode = LCDMode::HBlank;
 				lcd_status.mode_flag = (byte)mode;
 
@@ -260,9 +289,6 @@ namespace dromaiusgb
 				if (lcd_status.mode_1_vblank_interrupt)
 					interrupt_controller.RequestInterrupt(InterruptFlags::LCDStat);
 
-				//if (draw_thread.joinable())
-					//draw_thread.join();
-
 				SwapBuffers();
 			} 
 			else if (ly >= vlines_per_frame) // end vblank
@@ -274,9 +300,6 @@ namespace dromaiusgb
 
 				if (lcd_status.mode_0_hblank_interrupt)
 					interrupt_controller.RequestInterrupt(InterruptFlags::LCDStat);
-
-				//draw_thread = std::thread(&LCD::DrawRoutine, this);
-				DrawRoutine();
 			}
 		}
 
@@ -297,7 +320,5 @@ namespace dromaiusgb
 					interrupt_controller.RequestInterrupt(InterruptFlags::LCDStat);
 			}
 		}
-
-		// TODO: trigger LCD STAT interrupts based on status flags
 	}
 }

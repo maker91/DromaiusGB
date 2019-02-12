@@ -55,11 +55,10 @@ namespace dromaiusgb
 
 		byte add_with_carry(byte a, byte b, byte carry, flags_t &flags)
 		{
-			word bw = b + carry;
-			word r = a + bw;
+			word r = a + b + carry;
 			
 			flags.n = 0;
-			flags.h = (((a & 0x0F) + (bw & 0x0F)) & 0x10) >> 4;
+			flags.h = (((a & 0x0F) + (b & 0x0F) + carry) & 0x10) >> 4;
 			flags.cy = (r > 0xFF);
 
 			r = r & 0xFF;
@@ -69,15 +68,15 @@ namespace dromaiusgb
 
 		byte sub_with_carry(byte a, byte b, byte carry, flags_t &flags)
 		{
-			b -= carry;
-			byte r = a - b;
+			word r = a - b - carry;
 
 			flags.n = 1;
-			flags.h = ((a & 0x0F) < (b & 0x0F));
-			flags.cy = (a < b);
-			flags.zf = (r == 0);
+			flags.h = (((a & 0x0F) - (b & 0x0F) - carry) & 0x10) >> 4;
+			flags.cy = (r > 0xFF);
 
-			return r;
+			r = r & 0xFF;
+			flags.zf = (r == 0);
+			return (byte)r;
 		}
 
 		byte logical_and(byte a, byte b, flags_t &flags)
@@ -126,7 +125,7 @@ namespace dromaiusgb
 			word r = w + 1;
 			
 			flags.n = 0;
-			flags.h = (w <= 0x0F && r > 0x0F);
+			flags.h = ((r & 0x0F) < (w & 0x0F));
 
 			w = (byte)r & 0xFF;
 			flags.zf = (w == 0);
@@ -144,7 +143,7 @@ namespace dromaiusgb
 			word r = w - 1;
 
 			flags.n = 1;
-			flags.h = (w > 0x0F && r <= 0x0F);
+			flags.h = ((r & 0x0F) > (w & 0x0F));
 
 			w = (byte)r & 0xFF;
 			flags.zf = (w == 0);
@@ -301,7 +300,7 @@ namespace dromaiusgb
 		{
 			flags.cy = v & 0x01;
 			v >>= 1;
-			v |= (v >> 6) & 0x01;
+			v |= (v & 0x40) << 1;
 
 			flags.zf = (v == 0);
 			flags.n = 0;

@@ -39,6 +39,9 @@
     <ClCompile Include="link.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="joypad.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="cpu.hpp">
@@ -78,6 +81,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="link.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="joypad.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
