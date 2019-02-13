@@ -38,6 +38,8 @@ namespace dromaiusgb
 			else
 				r = add_words(a, b, flags);
 			
+			add_with_carry(a & 0xFF, (byte)b, 0, flags);
+
 			flags.zf = 0;
 			flags.n = 0;
 			return r;

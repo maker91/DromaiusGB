@@ -72,6 +72,7 @@ namespace dromaiusgb
 
 		std::thread thread;
 		std::atomic<bool> running;
+		std::atomic<bool> halted;
 
 	private:
 		dword HandleInterrupts();

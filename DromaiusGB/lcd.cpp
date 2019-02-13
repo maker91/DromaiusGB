@@ -11,7 +11,7 @@ namespace dromaiusgb
 	LCD::LCD(Bus &bus, InterruptController &ic) : Addressable(bus), interrupt_controller(ic)
 	{
 		screen_buffer = new uint32_t[160 * 144];
-		screen_texture.create(160, 140);
+		screen_texture.create(160, 144);
 
 		cycle = 0;
 		ly = 0;
@@ -125,7 +125,7 @@ namespace dromaiusgb
 	void LCD::DrawScanLine(byte sy)
 	{
 		// clear the screen to white
-		ClearScanLine(sy, 0xFF06978A);
+		//ClearScanLine(sy, 0xFF06978A);
 
 		if (lcd_control.lcd_display_enable == 0)
 			return;
@@ -168,7 +168,7 @@ namespace dromaiusgb
 			DrawTileMapScanLine(sy, std::min(0, window_x - 7), window_map, tile_data);
 		}
 
-		// draw sprites (TODO: some sprites should be under window/bg
+		// draw sprites (TODO: some sprites should be under window/bg)
 		if (lcd_control.obj_display_enable) {
 			byte sprite_height = 8 << (lcd_control.obj_size);
 			sprite_attribute_t *sprites = (sprite_attribute_t *)bus.GetBlock(0xFE00);
@@ -282,6 +282,9 @@ namespace dromaiusgb
 			} 
 			else if (ly == vblank_start) // start vblank 
 			{
+				// draw the previous scanline
+				DrawScanLine(ly - 1);
+
 				mode = LCDMode::VBlank;
 				lcd_status.mode_flag = (byte)mode;
 

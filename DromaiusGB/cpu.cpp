@@ -7,7 +7,7 @@ namespace dromaiusgb
 {
 
 	CPU::CPU(Bus &bus, LCD &lcd, Timer &timer, InterruptController &interrupt_controller) 
-		: bus(bus), lcd(lcd), timer(timer), interrupt_controller(interrupt_controller), running(false)
+		: bus(bus), lcd(lcd), timer(timer), interrupt_controller(interrupt_controller), running(false), halted(false)
 	{
 		registers[0] = &BC.hi; // B
 		registers[1] = &BC.lo; // C
@@ -659,7 +659,7 @@ namespace dromaiusgb
 				sbyte immediate = util::get_immediate_sbyte(PC, bus);
 				if (AF.flags.zf == zero_check) {
 					PC += immediate;
-					return 4;
+					return 12;
 				}
 				return 8;
 			}
@@ -670,7 +670,7 @@ namespace dromaiusgb
 				sbyte immediate = util::get_immediate_sbyte(PC, bus);
 				if (AF.flags.cy == carry_check) {
 					PC += immediate;
-					return 4;
+					return 12;
 				}
 				return 8;
 			}
@@ -680,7 +680,7 @@ namespace dromaiusgb
 				byte zero_check = opcode >> 3 & 0x01;
 				if (AF.flags.zf == zero_check) {
 					util::ret(PC, SP, bus);
-					return 12;
+					return 20;
 				}
 				return 8;
 			}
@@ -690,7 +690,7 @@ namespace dromaiusgb
 				byte carry_check = opcode >> 3 & 0x01;
 				if (AF.flags.cy == carry_check) {
 					util::ret(PC, SP, bus);
-					return 12;
+					return 20;
 				}
 				return 8;
 			}
@@ -701,7 +701,7 @@ namespace dromaiusgb
 				word immediate = util::get_immediate_word(PC, bus);
 				if (AF.flags.zf == zero_check) {
 					PC = immediate;
-					return 4;
+					return 16;
 				}
 				return 12;
 			}
@@ -712,7 +712,7 @@ namespace dromaiusgb
 				word immediate = util::get_immediate_word(PC, bus);
 				if (AF.flags.cy == carry_check) {
 					PC = immediate;
-					return 4;
+					return 16;
 				}
 				return 12;
 			}
@@ -730,7 +730,7 @@ namespace dromaiusgb
 				word immediate = util::get_immediate_word(PC, bus);
 				if (AF.flags.zf == zero_check) {
 					util::call(immediate, SP, PC, bus);
-					return 12;
+					return 24;
 				}
 				return 12;
 			}
@@ -741,7 +741,7 @@ namespace dromaiusgb
 				word immediate = util::get_immediate_word(PC, bus);
 				if (AF.flags.cy == carry_check) {
 					util::call(immediate, SP, PC, bus);
-					return 12;
+					return 24;
 				}
 				return 12;
 			}
@@ -823,7 +823,7 @@ namespace dromaiusgb
 
 			case 0x76: case 0x10: // halt/stop
 			{
-				//std::cout << "HALT/STOP" << std::endl;
+				halted = true;
 				return 4;
 			}
 
@@ -851,6 +851,9 @@ namespace dromaiusgb
 
 	dword CPU::HandleInterrupts()
 	{
+		if (halted && interrupt_controller.interrupt_flags != 0)
+			halted = false;
+
 		if (!interrupt_master_enable_flag)
 			return 0;
 
@@ -925,7 +928,11 @@ namespace dromaiusgb
 		thread = std::thread([&] {
 			while (running) {
 				dword cycles = HandleInterrupts();
-				cycles += Step();
+
+				if (halted)
+					cycles += 4;
+				else
+					cycles += Step();
 
 				// tick the internal timer
 				timer.Tick(cycles);
