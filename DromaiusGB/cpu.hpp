@@ -83,5 +83,6 @@ namespace dromaiusgb
 
 		void Start();
 		void Stop();
+		void Toggle();
 	};
 }

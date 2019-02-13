@@ -24,7 +24,7 @@ namespace dromaiusgb
 
 		sbyte get_immediate_sbyte(word &pc, Bus &mem)
 		{
-			sbyte r = mem.Get(pc);
+			byte r = mem.Get(pc);
 			pc += 1;
 
 			return r;
@@ -32,24 +32,36 @@ namespace dromaiusgb
 
 		word add_word_and_sbyte(word a, sbyte b, flags_t &flags)
 		{
-			word r = a + b;
-
+			word r;
+			if (b < 0)
+				r = sub_words(a, -b, flags);
+			else
+				r = add_words(a, b, flags);
+			
 			flags.zf = 0;
 			flags.n = 0;
-			flags.h = ((b > 0 && a <= 0x00FF && r > 0x00FF) || (b < 0 && a > 0x00FF && r <= 0x00FF));
-			flags.cy = ((b > 0 && r < a) || (b < 0 && r > a));
-
 			return r;
 		}
 
 		word add_words(word a, word b, flags_t &flags)
 		{
-			word r = a + b;
+			byte zf = flags.zf;
+			byte rlo = add_with_carry(a & 0xFF, b & 0xFF, 0, flags);
+			byte rhi = add_with_carry(a >> 8 & 0xFF, b >> 8 & 0xFF, flags.cy, flags);
+			flags.zf = zf;
 
-			flags.n = 0;
-			flags.h = (((a & 0xFF) + (b & 0xFF)) & 0x0100) >> 8;
-			flags.cy = (r < a);
+			word r = (word)rlo | (word)(rhi << 8);
+			return r;
+		}
 
+		word sub_words(word a, word b, flags_t &flags)
+		{
+			byte zf = flags.zf;
+			byte rlo = sub_with_carry(a & 0xFF, b & 0xFF, 0, flags);
+			byte rhi = sub_with_carry(a >> 8 & 0xFF, b >> 8 & 0xFF, flags.cy, flags);
+			flags.zf = zf;
+
+			word r = (word)rlo | (word)(rhi << 8);
 			return r;
 		}
 

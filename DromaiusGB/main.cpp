@@ -88,6 +88,8 @@ int main(int argc, const char* argv[])
 						case sf::Keyboard::X: joypad->SetButtonState(dromaiusgb::JoypadButton::B, true); break;
 						case sf::Keyboard::Escape: joypad->SetButtonState(dromaiusgb::JoypadButton::Start, true); break;
 						case sf::Keyboard::Tab: joypad->SetButtonState(dromaiusgb::JoypadButton::Select, true); break;
+
+						case sf::Keyboard::P: cpu.Toggle(); break;
 					}
 					break;
 				}

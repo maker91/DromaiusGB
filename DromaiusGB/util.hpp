@@ -14,6 +14,7 @@ namespace dromaiusgb
 
 		word add_word_and_sbyte(word a, sbyte b, flags_t &flags);
 		word add_words(word a, word b, flags_t &flags);
+		word sub_words(word a, word b, flags_t &flags);
 		byte add_with_carry(byte a, byte b, byte carry, flags_t &flags);
 		byte sub_with_carry(byte a, byte b, byte carry, flags_t &flags);
 		byte logical_and(byte a, byte b, flags_t &flags);

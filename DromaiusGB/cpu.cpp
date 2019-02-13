@@ -7,7 +7,7 @@ namespace dromaiusgb
 {
 
 	CPU::CPU(Bus &bus, LCD &lcd, Timer &timer, InterruptController &interrupt_controller) 
-		: bus(bus), lcd(lcd), timer(timer), interrupt_controller(interrupt_controller)
+		: bus(bus), lcd(lcd), timer(timer), interrupt_controller(interrupt_controller), running(false)
 	{
 		registers[0] = &BC.hi; // B
 		registers[1] = &BC.lo; // C
@@ -381,8 +381,8 @@ namespace dromaiusgb
 			case 0x08: // ld (nn), SP
 			{
 				word immediate = util::get_immediate_word(PC, bus);
-				bus.Set(immediate, (SP >> 8) & 0xFF);
-				bus.Set(immediate + 1, SP & 0xFF);
+				bus.Set(immediate, SP & 0xFF);
+				bus.Set(immediate + 1, (SP >> 8) & 0xFF);
 				return 20;
 			}
 
@@ -748,7 +748,7 @@ namespace dromaiusgb
 
 			case 0xC7: case 0xD7: case 0xE7: case 0xF7: case 0xCF: case 0xDF: case 0xEF: case 0xFF: // rst
 			{
-				word addr = opcode >> 4 & 0x03;
+				word addr = opcode & 0x30;
 				byte offset = opcode & 0x08;
 				util::call(addr + offset, SP, PC, bus);
 				return 16;
@@ -916,6 +916,9 @@ namespace dromaiusgb
 
 	void CPU::Start()
 	{
+		if (running)
+			return;
+
 		running = true;
 
 		// start a thread to Step the cpu
@@ -935,7 +938,18 @@ namespace dromaiusgb
 
 	void CPU::Stop()
 	{
+		if (!running)
+			return;
+
 		running = false;
 		thread.join();
+	}
+
+	void CPU::Toggle()
+	{
+		if (running)
+			Stop();
+		else
+			Start();
 	}
 }
