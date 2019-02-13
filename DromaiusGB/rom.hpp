@@ -34,7 +34,7 @@ namespace dromaiusgb
 			return &rom[addr.offset];
 		}
 
-		void LoadRom(std::string name)
+		void LoadFromFile(std::string name)
 		{
 			std::ifstream input(name, std::ios::binary);
 

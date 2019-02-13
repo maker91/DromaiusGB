@@ -1,15 +1,13 @@
 #pragma once
 
-#include <string>
-#include <fstream>
+#include <istream>
 #include "types.hpp"
-#include "addressable.hpp"
-#include "cartridge.hpp"
+#include "imbc.hpp"
 
 namespace dromaiusgb
 {
 	template <word ROMSize, byte ROMBanks, word RAMSize, byte RAMBanks>
-	class MBC1 : public Addressable
+	class MBC1 : public MBC
 	{
 	private:
 		byte rom[ROMBanks][ROMSize];
@@ -20,12 +18,6 @@ namespace dromaiusgb
 		byte mode_select = 0;
 
 	public:
-		MBC1(Bus &) : Addressable(bus) {};
-
-		bool Enabled() const
-		{
-			return true;
-		};
 
 		void Set(bus_address_t addr, byte val) 
 		{
@@ -104,25 +96,26 @@ namespace dromaiusgb
 
 		byte *GetBlock(bus_address_t addr)
 		{
-			return nullptr; // Getting a block of memory from memory banked rom/ram not implemented
+			if (addr.address >= 0x000 && addr.address <= 0x3FFF)
+				return &rom[0][addr.address - 0x000];
+
+			if (addr.address >= 0x4000 && addr.address <= 0x7FFF) {
+				byte corrected_rom_bank = rom_bank;
+				if ((corrected_rom_bank & 0x1F) == 0x0) // if the lower 5 bits are all zero, add one
+					corrected_rom_bank += 1;
+
+				return &rom[corrected_rom_bank][addr.address - 0x4000];
+			}
+
+			if (addr.address >= 0xA000 && addr.address <= 0xBFFF && ram_enabled)
+				return &ram[ram_bank][addr.address - 0xA000];
+
+			return nullptr;
 		}
 
-		void LoadRom(std::string name)
+		void LoadROM(std::istream &input)
 		{
-			std::ifstream input(name, std::ios::binary);
-
-			if (!input)
-				throw std::runtime_error("failed to load rom: " + name);
-
 			input.read((char *)rom, ROMSize * ROMBanks);
-
-			cartridge_header_t *header = (cartridge_header_t *)&rom[0][0x100];
-			
-			std::cout << "===== Cartridge Header =====" << std::endl;
-			std::cout << "Title: " << header->title << std::endl;
-			std::cout << "Cartidge Type: 0x" << std::hex << (int)header->cartridge_type << std::endl;
-			std::cout << "ROM Size: 0x" << std::hex << (int)header->rom_size << std::endl;
-			std::cout << "RAM Size: 0x" << std::hex << (int)header->ram_size << std::endl;
 		}
 	};
 }

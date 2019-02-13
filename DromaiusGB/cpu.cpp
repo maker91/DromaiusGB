@@ -23,14 +23,25 @@ namespace dromaiusgb
 		wregisters[2] = &HL.value;
 		wregisters[3] = &SP;
 
-		AF = BC = DE = HL = PC = SP = 0;
+		// initial register values
+		AF = 0x01B0;
+		BC = 0x0013;
+		DE = 0x00D8;
+		HL = 0x014D;
+		PC = 0;
+		SP = 0xFFFE;
 		interrupt_master_enable_flag = true;
+		next_fetch_is_halt_bug = false;
 	};
 
 	dword CPU::HandleCBPrefixOpcode()
 	{
 		opcode_t opcode = bus.Get(PC);
-		PC += 1;
+
+		if (next_fetch_is_halt_bug)
+			next_fetch_is_halt_bug = false;
+		else
+			PC += 1;
 
 		switch (opcode) {
 			case 0x00: case 0x01: case 0x02: case 0x03: case 0x04: case 0x05: case 0x07: // rlc reg
@@ -821,9 +832,20 @@ namespace dromaiusgb
 				return 4;
 			}
 
-			case 0x76: case 0x10: // halt/stop
+			case 0x76: // halt
 			{
-				halted = true;
+				if (!interrupt_master_enable_flag && (interrupt_controller.interrupt_flags & interrupt_controller.interrupt_enable)) {
+					// HALT BUG
+					next_fetch_is_halt_bug = true;
+				} else {
+					halted = true;
+				}
+
+				return 4;
+			}
+
+			case 0x10: // stop
+			{
 				return 4;
 			}
 
@@ -851,18 +873,19 @@ namespace dromaiusgb
 
 	dword CPU::HandleInterrupts()
 	{
-		if (halted && interrupt_controller.interrupt_flags != 0)
-			halted = false;
-
-		if (!interrupt_master_enable_flag)
-			return 0;
+		dword cycles = 0;
 
 		interrupt_flags_t interrupt_enable = interrupt_controller.interrupt_enable;
 		interrupt_flags_t &interrupt_flags = interrupt_controller.interrupt_flags;
 		interrupt_flags_t interrupts_to_execute = interrupt_enable & interrupt_flags;
 
-		if (!interrupts_to_execute)
-			return 0;
+		if (halted && interrupts_to_execute) {
+			halted = false;
+			cycles += 4;
+		}
+
+		if (!interrupt_master_enable_flag || !interrupts_to_execute)
+			return cycles;
 
 		// check V-Blank
 		if (interrupts_to_execute.vblank)
@@ -871,7 +894,7 @@ namespace dromaiusgb
 			interrupt_master_enable_flag = false;
 
 			util::call(0x40, SP, PC, bus);
-			return 5;
+			return cycles + 20;
 		}
 
 		// check LCD STAT
@@ -881,7 +904,7 @@ namespace dromaiusgb
 			interrupt_master_enable_flag = false;
 
 			util::call(0x48, SP, PC, bus);
-			return 5;
+			return cycles + 20;
 		}
 
 		// check Timer
@@ -891,7 +914,7 @@ namespace dromaiusgb
 			interrupt_master_enable_flag = false;
 
 			util::call(0x50, SP, PC, bus);
-			return 5;
+			return cycles + 20;
 		}
 
 		// check Serial
@@ -901,7 +924,7 @@ namespace dromaiusgb
 			interrupt_master_enable_flag = false;
 
 			util::call(0x58, SP, PC, bus);
-			return 5;
+			return cycles + 20;
 		}
 
 		// check Joypad
@@ -911,10 +934,10 @@ namespace dromaiusgb
 			interrupt_master_enable_flag = false;
 
 			util::call(0x60, SP, PC, bus);
-			return 5;
+			return cycles + 20;
 		}
 
-		return 0;
+		return cycles;
 	}
 
 	void CPU::Start()

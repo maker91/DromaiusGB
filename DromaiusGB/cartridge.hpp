@@ -1,6 +1,11 @@
 #pragma once
 
 #include "types.hpp"
+#include "addressable.hpp"
+#include "imbc.hpp"
+#include <memory>
+#include <string>
+
 
 namespace dromaiusgb
 {
@@ -20,5 +25,23 @@ namespace dromaiusgb
 		byte rom_version;
 		byte header_checksum;
 		word global_checksum;
+	};
+
+	class Cartridge : public Addressable
+	{
+	private:
+		std::unique_ptr<MBC> mbc;
+
+	public:
+		cartridge_header_t header;
+
+	public:
+		Cartridge(Bus &);
+
+		void Set(bus_address_t, byte);
+		byte Get(bus_address_t) const;
+		byte *GetBlock(bus_address_t);
+
+		void LoadFromFile(std::string filename);
 	};
 }

@@ -127,10 +127,11 @@ namespace dromaiusgb
 		LCDMode mode;
 
 		sf::Uint32 *screen_buffer;
+		int *priority_buffer;
 		sf::Texture screen_texture;
 	private:
 		void ClearScanLine(byte, std::uint32_t);
-		void DrawTileMapScanLine(byte, byte, byte *, tile_data_t *);
+		void DrawBGScanLine(byte, byte, byte *, tile_data_t *);
 		void DrawScanLine(byte);
 		void SwapBuffers();
 

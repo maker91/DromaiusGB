@@ -130,6 +130,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="bus.cpp" />
+    <ClCompile Include="cartridge.cpp" />
     <ClCompile Include="cpu.cpp" />
     <ClCompile Include="interrupts.cpp" />
     <ClCompile Include="joypad.cpp" />
@@ -145,6 +146,8 @@
     <ClInclude Include="interrupts.hpp" />
     <ClInclude Include="joypad.hpp" />
     <ClInclude Include="link.hpp" />
+    <ClInclude Include="imbc.hpp" />
+    <ClInclude Include="mbc0.hpp" />
     <ClInclude Include="mbc1.hpp" />
     <ClInclude Include="ram.hpp" />
     <ClInclude Include="rom.hpp" />

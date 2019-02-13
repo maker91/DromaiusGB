@@ -5,7 +5,7 @@
 #include "bus.hpp"
 #include "rom.hpp"
 #include "ram.hpp"
-#include "mbc1.hpp"
+#include "cartridge.hpp"
 
 #include "cpu.hpp"
 #include "lcd.hpp"
@@ -26,8 +26,7 @@ int main(int argc, const char* argv[])
 
 	auto boot_rom = std::make_shared<dromaiusgb::ROM<0x100>>(address_bus);
 	auto boot_rom_switch = std::make_shared<dromaiusgb::ROMSwitch<0x100>>(address_bus, boot_rom);
-	//auto cartridge = std::make_shared<dromaiusgb::ROM<0x8000>>(address_bus);
-	auto cartridge = std::make_shared<dromaiusgb::MBC1<0x4000, 128, 0x2000, 4>>(address_bus);
+	auto cartridge = std::make_shared<dromaiusgb::Cartridge>(address_bus);
 	auto vram = std::make_shared<dromaiusgb::RAM<0x2000>>(address_bus);
 	auto wram = std::make_shared<dromaiusgb::RAM<0x2000>>(address_bus);
 	auto oam = std::make_shared<dromaiusgb::RAM<0x009F>>(address_bus);
@@ -55,8 +54,8 @@ int main(int argc, const char* argv[])
 	address_bus.RegisterAddressSpace(0xFFFF, 0xFFFF, interrupt_controller);
 
 	// Load the boot rom and cartridge
-	boot_rom->LoadRom("bootstrap.bin");
-	cartridge->LoadRom(argv[1]);
+	boot_rom->LoadFromFile("bootstrap.bin");
+	cartridge->LoadFromFile(argv[1]);
 
 	// start the cpu thread
 	dromaiusgb::CPU cpu(address_bus, *lcd, *timer, *interrupt_controller);
@@ -69,7 +68,7 @@ int main(int argc, const char* argv[])
 	spr.setScale(2.5f, 2.5f);
 
 	// create a window and poll for events
-	sf::RenderWindow window(sf::VideoMode(480, 432), "DromaiusGC", sf::Style::Close);
+	sf::RenderWindow window(sf::VideoMode(480, 432), "DromaiusGB", sf::Style::Close);
 
 	while (window.isOpen()) {
 
